@@ -18,7 +18,7 @@ nLvls = 3
 alphaVals = 1.1^seq(0,nLvls-1)
 lkinfo<-LatticeKrig::LKrigSetup(gridPts, startingLevel=1, nlevel=nLvls,alpha=alphaVals,LKGeometry='LKSphere')
 # centers<-LatticeKrig::LKrigLatticeCenters(lkinfo, Level=nLvls,physicalCoordinates=TRUE)
-# nFns = c(0,12,42,162,642,2562,10242,40962);
+# nFns = c(0,12,42,162,642,2562,10242,40962)
 # 
 # distMat = fields::rdist.earth(gridPts,centers[1:nFns[min(5,nLvls)+1],] ,R=1)
 # ndcs = apply(distMat, 2, which.min)
