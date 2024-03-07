@@ -1,6 +1,7 @@
 ## Lattice Krig testing with GLOW and WACCMX output data
 ## Code for using the LatticeKrig package on WACCMX output from the Tonga eruption
 setwd('/homes/male7736/Desktop/Research/MRF-covariance-modeling/')
+source('NeedletFunctions.R')
 library("spam64")
 ncobj<-ncdf4::nc_open('/homes/male7736/Desktop/Research/Data/waccmx_tonga_O_1min_above400km.nc') #creating nc object
 oxy<-ncdf4::ncvar_get( ncobj,varid='O', start = c(1,1,12,85), count=c(-1,-1,1,31) )
@@ -14,8 +15,8 @@ gridPts<-expand.grid(oce::angleRemap(lon),lat)
 # lvls = seq(1,7)
 # for(x in lvls)
 # {
-nLvls = 3
-alphaVals = 1.1^seq(0,nLvls-1)
+nLvls = 4
+alphaVals = 1.1^seq(1,nLvls)
 lkinfo<-LatticeKrig::LKrigSetup(gridPts, startingLevel=1, nlevel=nLvls,alpha=alphaVals,LKGeometry='LKSphere')
 # centers<-LatticeKrig::LKrigLatticeCenters(lkinfo, Level=nLvls,physicalCoordinates=TRUE)
 # nFns = c(0,12,42,162,642,2562,10242,40962)
@@ -27,8 +28,8 @@ lkinfo<-LatticeKrig::LKrigSetup(gridPts, startingLevel=1, nlevel=nLvls,alpha=alp
 #   thisData = array(oxy,dim=c(361*720,31))
 #   thisData = thisData[thisLvl,]
 # }
-
-#   #Q     <-LatticeKrig::LKrig.precision(lkinfo)
+Q <- Needlet.Precision(lkinfo)
+# <-LatticeKrig::LKrig.precision(lkinfo)
 #   tmp<-LatticeKrig::LKrig(gridPts, y,LKinfo=lkinfo, lambda=0.0001)
 #   results[[x]]<-tmp
 # }
