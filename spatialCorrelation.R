@@ -14,7 +14,7 @@ oxyVector <- matrix(oxy, ncol=200)
 centers <- R.matlab::readMat('needletCenters.mat') #Longitude,latitude
 r = 6378100
 
-for(i in 1:4){
+for(i in 1:3){
   centerPts <- matrix(unlist(centers$tps[[i]]),nrow=2)
   dists <- distm(t(centerPts),gridPts,fun=distCosine)/r
   distsCenters <- distm(t(centerPts),fun=distCosine)/r
