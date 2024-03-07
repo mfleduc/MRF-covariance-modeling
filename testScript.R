@@ -34,7 +34,8 @@ Q <- Needlet.Precision(lkinfo)
 #   results[[x]]<-tmp
 # }
 # 
-# 
+A <- Needlet.Simulate(lkinfo)
+PHI <- R.matlab::readMat('needletA_deg.mat')
 # for(x in lvls)
 # {
 #   png(filename=paste('Level_',x,'.png'))
