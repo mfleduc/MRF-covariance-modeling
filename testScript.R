@@ -1,10 +1,11 @@
 ## Lattice Krig testing with GLOW and WACCMX output data
 ## Code for using the LatticeKrig package on WACCMX output from the Tonga eruption
-setwd('/homes/male7736/Desktop/Research/MRF-covariance-modeling/')
-library("spam64")
-ncobj<-ncdf4::nc_open('/homes/male7736/Desktop/Research/Data/waccmx_tonga_O_1min_above400km.nc') #creating nc object
-oxy<-ncdf4::ncvar_get( ncobj,varid='O', start = c(1,1,12,85), count=c(-1,-1,1,31) )
-lev<-ncdf4::ncvar_get( ncobj,varid='lev')
+# setwd('/homes/male7736/Desktop/Research/MRF-covariance-modeling/')
+setwd('C:/Users/Test/Documents/Research/MRF-covariance-modeling')
+#library("spam64")
+ncobj<-ncdf4::nc_open('C:/Users/Test/Documents/Research/202201010000.nc') #creating nc object
+oxy<-ncdf4::ncvar_get( ncobj,varid='ETA')#, start = c(1,1,12,85), count=c(-1,-1,1,31) )
+lev<-ncdf4::ncvar_get( ncobj,varid='ZZZ')
 lat<-ncdf4::ncvar_get(ncobj,varid='lat')
 lon<-ncdf4::ncvar_get(ncobj,varid='lon')
 
@@ -14,11 +15,11 @@ gridPts<-expand.grid(oce::angleRemap(lon),lat)
 # lvls = seq(1,7)
 # for(x in lvls)
 # {
-nLvls = 3
+nLvls = 1
 alphaVals = 1.1^seq(0,nLvls-1)
 lkinfo<-LatticeKrig::LKrigSetup(gridPts, startingLevel=1, nlevel=nLvls,alpha=alphaVals,LKGeometry='LKSphere')
-# centers<-LatticeKrig::LKrigLatticeCenters(lkinfo, Level=nLvls,physicalCoordinates=TRUE)
-# nFns = c(0,12,42,162,642,2562,10242,40962)
+centers<-LatticeKrig::LKrigLatticeCenters(lkinfo, Level=nLvls,physicalCoordinates=TRUE)
+nFns = c(0,12,42,162,642,2562,10242,40962)
 # 
 # distMat = fields::rdist.earth(gridPts,centers[1:nFns[min(5,nLvls)+1],] ,R=1)
 # ndcs = apply(distMat, 2, which.min)
