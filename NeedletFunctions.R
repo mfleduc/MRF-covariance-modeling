@@ -10,10 +10,10 @@ Needlet.Precision <- function(lkinfo){
   for(j in 1:length(jList)){
     tmp<-unlist(adjMat$adjacencies[[j]] )
     adj <-spam::spam(tmp ,nrow = 12*4^jList[j])
-    rowAdjust <-  spam::diag.spam(-1/rowSums(adj))
+    rowAdjust <-  spam::diag.spam(-1/spam::rowSums(adj))
     #Adjusting the SAR matrix for the number of nearest neighbors
     adj2 <- rowAdjust%*%adj
-    adj3<-adj2+(unlist(lkinfo$alpha[j])+0.001)*(spam::diag.spam(12*4^jList[j]))
+    adj3<-adj2+(unlist(lkinfo$alpha[j]))*(spam::diag.spam(12*4^jList[j]))
     adjList[[j]] = adj3
     }
   B <- adjList[[1]]
@@ -44,9 +44,9 @@ Needlet.Simulate <-function(lkinfo){
   jmin = lkinfo$setupArgs$startingLevel-1;
   jmax = jmin+lkinfo$nlevel-1;
   Q <- Needlet.Precision(lkinfo)
-  Qchol <- chol.spam(Q)
+  Qchol <- chol(Q)
   m <- 12*(4^((jmin):(jmax))) # total number of basis functions
-  E <- matrix(rnorm(m), nrow = m, ncol = 1) #Random, normally distributed coefficients
-  
+  E <- matrix(rnorm(m), nrow = sum(m), ncol = 1) #Random, normally distributed coefficients
+  A <- as.matrix(spam::backsolve(Qchol, E))
+  return(A)
 }
-Q<-Needlet.Precision(lkinfo)
