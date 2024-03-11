@@ -20,12 +20,12 @@ Needlet.Precision <- function(lkinfo){
   for(j in 2:length(jList)){
     B = spam::bdiag.spam(B,adjList[[j]])
   }
-  return(t(B)%*%B)
+  return(list(Q=t(B)%*%B,B=B))
 }
 Needlet.LnLike <- function(p,y,PHI,lkinfo,tau,r.decay=TRUE,look=FALSE){
   #PHI is the matrix defining the needlet basis fns. Ideally sparse in some manner.
   #Define a cutoff radius? Unclear how to handle.
-  Q <- Needlet.Precision(lkinfo)
+  Q <- Needlet.Precision(lkinfo)[[1]]
   if(is.na(lkinfo$lambda)){
     lambda <- 1
   }else{
@@ -43,7 +43,7 @@ Needlet.Simulate <-function(lkinfo){
   #Return the coefficients to save some small amount of trouble
   jmin = lkinfo$setupArgs$startingLevel-1;
   jmax = jmin+lkinfo$nlevel-1;
-  Q <- Needlet.Precision(lkinfo)
+  Q <- Needlet.Precision(lkinfo)[[1]]
   Qchol <- chol(Q)
   m <- 12*(4^((jmin):(jmax))) # total number of basis functions
   E <- matrix(rnorm(m), nrow = sum(m), ncol = 1) #Random, normally distributed coefficients
