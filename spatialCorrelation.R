@@ -14,7 +14,7 @@ if(grepl("ndows",as.character(a["sysname"]))){
   oxy<-ncdf4::ncvar_get( ncobj,varid='O', start = c(1,1,12,50), count=c(-1,-1,1,200) )
   lev<-ncdf4::ncvar_get( ncobj,varid='lev')
 }
-
+source("NeedletFunctions.R")
 lat<-ncdf4::ncvar_get(ncobj,varid='lat')
 lon<-ncdf4::ncvar_get(ncobj,varid='lon')
 lonNdcs = seq(1,length(lon),by=2)
@@ -33,7 +33,7 @@ Q<-Needlet.Precision(lkinfo)
 B<-fields::spam2full(Q[[2]])
 Q<-fields::spam2full(Q[[1]])
 Qi <- solve(Q)
-for(i in 1:4){
+for(i in 1:1){
   centerPts <- matrix(unlist(centers$tps[[i]]),nrow=2)
   #dists <- distm(t(centerPts),gridPts,fun=distCosine)/r
   #distsCenters <- distm(t(centerPts),fun=distCosine)/r
