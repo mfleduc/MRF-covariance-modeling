@@ -35,15 +35,16 @@ Q<-fields::spam2full(Q[[1]])
 Qi <- solve(Q)
 for(i in 1:4){
   centerPts <- matrix(unlist(centers$tps[[i]]),nrow=2)
-  #dists <- distm(t(centerPts),gridPts,fun=distCosine)/r
-  #distsCenters <- distm(t(centerPts),fun=distCosine)/r
-  #minNdcs <- apply(dists, 1, FUN = which.min)
-  #dataPts = oxyVector[minNdcs,]
-  #corrMat = cor(t(dataPts))
+  dists <- distm(t(centerPts),gridPts,fun=distCosine)/r
+  distsCenters <- distm(t(centerPts),fun=distCosine)/r
+  minNdcs <- apply(dists, 1, FUN = which.min)
+  dataPts = oxyVector[minNdcs,]
+  corrMat = cor(t(dataPts))
   locs = Q[lastNdx+1,(lastNdx+1):(lastNdx+dim(centerPts)[2])]!=0
   fields::quilt.plot( t(centerPts),Q[lastNdx+1,(lastNdx+1):(lastNdx+dim(centerPts)[2])],main=paste('Precision matrix, j=',i-1))
   points(t(centerPts[,locs]), pch=19)
   fields::quilt.plot( t(centerPts), diag(Qi[seq(lastNdx+1,lastNdx+dim(centerPts)[2]),seq(lastNdx+1,lastNdx+dim(centerPts)[2])]),main=paste('Marginal variances, j=',i-1))
+ # fields::quilt.plot( t(centerPts), diag(corrMat),main='empirical variances' )
   lastNdx = lastNdx+dim(centerPts)[2]
   }
 # plot3D::scatter2D(centerPts[1,]+180,centerPts[2,],colvar = corrMat[700,],pch=19)

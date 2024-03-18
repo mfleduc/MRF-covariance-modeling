@@ -8,11 +8,13 @@ Needlet.Precision <- function(lkinfo){
   adjMat <- R.matlab::readMat('needletAdjacencyMatrix.mat',sparseMatrixClass='SparseM' ) 
   adjList = list()
   for(j in 1:length(jList)){
-    tmp<-unlist(adjMat$adjacencies[[j]] )
+    tmp<-unlist(adjMat$distances[[j]] )
+    mask <- (tmp!=0)
+    tmp[mask] <- 1/tmp[mask]
     adj <-spam::spam(tmp ,nrow = 12*4^jList[j])
-    rowAdjust <-  spam::diag.spam(-1/spam::rowSums(adj))
-    #Adjusting the SAR matrix for the number of nearest neighbors
-    adj2 <- rowAdjust%*%adj
+    invDists <-  spam::diag.spam(-1/spam::rowSums(adj))
+    #Adjusting the SAR matrix for the number of nearest neighbors and their distances
+    adj2 <- invDists%*%adj
     adj3<-adj2+(unlist(lkinfo$alpha[j]))*(spam::diag.spam(12*4^jList[j]))
     adjList[[j]] = adj3
     }
@@ -33,7 +35,11 @@ Needlet.LnLike <- function(p,y,PHI,lkinfo,tau,r.decay=TRUE,look=FALSE){
   }
   G = lambda*Q+1/tau^2*t(PHI)%*%PHI #Assuming W = Id : Errors uncorrelated with the same variance. 
   Gchol <- chol.spam( G ) #Bottleneck, but prevents slow inversion of G
-}
+  PtDinvy <- t(PHI1) %*% y/tau^2 
+  rightPc <- backsolve(Gchol ,forwardsolve(Gchol , transpose=TRUE, PtDinvy, upper.tri=TRUE)) #Follows from Sec 3.1
+  # Nychka, Douglas, et al. “A Multiresolution Gaussian Process Model for the Analysis of Large Spatial Datasets.” Journal of Computational and Graphical Statistics, vol. 24, no. 2, 2015, pp. 579–99. JSTOR, http://www.jstor.org/stable/24737282. 
+  
+  }
 Needlet.FixedEffects<-function(lkinfo,y,Z,PHI){
   #y: data
   #Z: Matrix of size (n datapoints x n predictors), with each column corresponding to a predictor and each row a lattice point
