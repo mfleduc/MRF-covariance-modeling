@@ -24,9 +24,10 @@ Needlet.Precision <- function(lkinfo){
   }
   return(list(Q=t(B)%*%B,B=B))
 }
-Needlet.LnLike <- function(p,y,PHI,lkinfo,tau,r.decay=TRUE,look=FALSE){
+Needlet.LnLike <- function(y,PHI,lkinfo,tau,r.decay=TRUE,look=FALSE){
   #PHI is the matrix defining the needlet basis fns. Ideally sparse in some manner.
-  #Define a cutoff radius? Unclear how to handle.
+  #Define a cutoff radius? Unclear how to handle
+  nSamples <- length(y)
   Q <- Needlet.Precision(lkinfo)[[1]]
   if(is.na(lkinfo$lambda)){
     lambda <- 1
@@ -34,16 +35,42 @@ Needlet.LnLike <- function(p,y,PHI,lkinfo,tau,r.decay=TRUE,look=FALSE){
     lambda <- lkinfo$lambda
   }
   G = lambda*Q+1/tau^2*t(PHI)%*%PHI #Assuming W = Id : Errors uncorrelated with the same variance. 
-  Gchol <- chol.spam( G ) #Bottleneck, but prevents slow inversion of G
-  PtDinvy <- t(PHI1) %*% y/tau^2 
+  Gchol <- spam::chol.spam( G ) #Bottleneck, but prevents slow inversion of G
+  PtDinvy <- t(PHI) %*% y/tau^2 
   rightPc <- backsolve(Gchol ,forwardsolve(Gchol , transpose=TRUE, PtDinvy, upper.tri=TRUE)) #Follows from Sec 3.1
   # Nychka, Douglas, et al. “A Multiresolution Gaussian Process Model for the Analysis of Large Spatial Datasets.” Journal of Computational and Graphical Statistics, vol. 24, no. 2, 2015, pp. 579–99. JSTOR, http://www.jstor.org/stable/24737282. 
-  
+  quadform <- sum(y^2/tau^2)-sum(PtDinvy)*rightPc
+  Qchol <- spam::chol.spam(Q)
+  logdet <- nSamples*2*log(tau) + 2*sum(log(spam::diag(Gchol))) - 2*sum(log(spam::diag(Qchol)))
+    
+  lnlike <- -1*(logdet + quadform)
+  return(lnlike)
   }
-Needlet.FixedEffects<-function(lkinfo,y,Z,PHI){
+Needlet.FixedEffects<-function(lkinfo,y,Z,PHI,tau){
   #y: data
   #Z: Matrix of size (n datapoints x n predictors), with each column corresponding to a predictor and each row a lattice point
   #phi: Matrix of basis functions
+  #tau: Noise stdev (nugget effect)
+  if(is.na(lkinfo$lambda)){
+    lambda <- 0.01
+  }else{
+    lambda <- lkinfo$lambda
+  }
+  #First: calculate M^_{-1}y
+  Q <- Needlet.Precision(lkinfo)[[1]]
+  G = lambda*Q+1/tau^2*t(PHI)%*%PHI
+  Gchol <-spam::chol.spam(G)
+  Pty <- t(PHI)%*%y/tau^2
+  v <- spam::backsolve.spam(Gchol,spam::forwardsolve.spam(Gchol, Pty, upper.tri=TRUE))
+  Miy <- 1/lambda*(y/tau^2-1/tau^2*PHI%*%v)
+  ZTMiy <- t(Z)%*%Miy
+  # Now: Calculate (Z^TM^{-1}Z)^{-1} in the same manner
+  PtZ <- t(PHI)%*%Z/tau^2
+  GiPtZ <- spam::backsolve.spam(Gchol,spam::forwardsolve.spam(Gchol, PtZ, upper.tri=TRUE))
+  MiZ <- 1/lambda*(Z-PHI%*%GiPtZ)/tau^2
+  ZTMiZ <- t(Z)%*%MiZ
+  dhat <- solve(ZTMiZ, ZTMiy)
+  return(dhat)
 }
 Needlet.Simulate <-function(lkinfo){
   #Return the coefficients to save some small amount of trouble
@@ -55,4 +82,18 @@ Needlet.Simulate <-function(lkinfo){
   E <- matrix(rnorm(m), nrow = sum(m), ncol = 1) #Random, normally distributed coefficients
   A <- as.matrix(spam::backsolve(Qchol, E))
   return(A)
+}
+Needlet.CoeffEstimate <- function(lkinfo, y, PHI, tau){
+  #Following Nychka(2015) Section 3.1
+  Q <- Needlet.Precision(lkinfo)[[1]]
+  if(is.na(lkinfo$lambda)){
+    lambda <- 0.01
+  }else{
+    lambda <- lkinfo$lambda
+  }
+  G = lambda*Q+1/tau^2*t(PHI)%*%PHI #Assuming W = Id : Errors uncorrelated with the same variance. 
+  Gchol <- spam::chol.spam( G ) #Bottleneck, but prevents slow inversion of G
+  v <- t(PHI)%*%y/tau^2
+  chat <- spam::backsolve.spam(Gchol,spam::forwardsolve.spam(Gchol, v, upper.tri=TRUE))
+  return(chat)
 }
