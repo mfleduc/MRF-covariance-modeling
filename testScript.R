@@ -23,8 +23,10 @@ if(grepl("ndows",as.character(a["sysname"]))){
   ncobj<-ncdf4::nc_open('/homes/male7736/Desktop/Research/Data/waccmx_tonga_O_1min_above400km.nc') #creating nc object
   oxy<-ncdf4::ncvar_get( ncobj,varid='O', start = c(1,1,12,85), count=c(-1,-1,1,31) )
   lev<-ncdf4::ncvar_get( ncobj,varid='lev')
-  #PHI <- R.matlab::readMat('needletA_deg.mat')
-  
+  # PHI <- R.matlab::readMat('needletA_2deg.mat')
+  PHI <- R.matlab::readMat('needletA_swath.mat')
+  PHI <- as.matrix(PHI$A)
+  Phi<-PHI
 }
 source("NeedletFunctions.R")
 # lat<-ncdf4::ncvar_get(ncobj,varid='mlat')
@@ -32,17 +34,30 @@ source("NeedletFunctions.R")
 lat<-ncdf4::ncvar_get(ncobj,varid='lat')
 lon<-ncdf4::ncvar_get(ncobj,varid='lon')
 
-gridPts<-expand.grid(oce::angleRemap(lon),lat)
+latsSwath = (seq(-90,90,1))
+lonsSwath = 0.5*round(2*rbind(5/9*(latsSwath+90), 150+5/9*(latsSwath+90)),digits=0)
+
+
+gridPts<-expand.grid(lon,lat)
+mask = gridPts[,1]>1e6;
+for(ii in 1:length(latsSwath)){
+  m2 = (gridPts[,2]==latsSwath[ii])&(gridPts[,1]>=lonsSwath[1,ii])&(gridPts[,1]<=lonsSwath[2,ii])
+  mask = mask | m2
+}
+
 truth <- matrix(oxy[,,12],ncol=1)
+y <- truth[mask]
+Z <- cbind(gridPts[mask,2],gridPts[mask,1])
 #truth <- matrix(oxy,ncol=1)
-y<-matrix(t(oxy[seq(1,length(lon),by=2),seq(1,length(lat),by=2),12]),ncol=1)
+
+#y<-matrix(t(oxy[seq(1,length(lon),by=4),seq(1,length(lat),by=4),12]),ncol=1)
 #y<-matrix(t(oxy[seq(1,length(lon),by=2),seq(1,length(lat),by=4)]),ncol=1)
 # results<-vector(mode='list',length=8)
 
 # for(x in lvls)
 # {
 
-nLvls = 4
+nLvls = 5
 lvls = seq(1,nLvls)
 alphaVals = 1.1^seq(1,nLvls)
 lkinfo<-LatticeKrig::LKrigSetup(gridPts, startingLevel=1, nlevel=nLvls,alpha=alphaVals,LKGeometry='LKSphere')
@@ -76,11 +91,12 @@ lkinfo<-LatticeKrig::LKrigSetup(gridPts, startingLevel=1, nlevel=nLvls,alpha=alp
 # 
 # 
 
-PHI<-spam::as.spam(PHI, eps= 10^-1)
+PHI<-spam::as.spam(PHI, eps= 4*10^-3)
 # loglike <- Needlet.LnLike(y, PHI,lkinfo,1)
 
 
-Z <- as.matrix(expand.grid(lat[seq(1,length(lat),by=2)],lon[seq(1,length(lon),by=2)]))
+# Z <- as.matrix(expand.grid(lat[seq(1,length(lat),by=4)],lon[seq(1,length(lon),by=4)]))
+
 Zpred <- sin(pi/180*Z)
 onesVec <- vector(mode='numeric',length=dim(Z)[1])+1
 Zpred <- cbind(onesVec, Zpred)
@@ -92,6 +108,7 @@ chat <- Needlet.CoeffEstimate(lkinfo, r, PHI, 1)
 
 fieldEst <- Zpred%*%dhat + PHI%*%chat
 fieldEstNotSparse <- Zpred%*%dhat+Phi%*%chat
-fields::quilt.plot(Z,fieldEst,main='needlets zeroed out')
-fields::quilt.plot(Z,fieldEstNotSparse,main='Needlets not zeroed out')
-fields::quilt.plot(Z,y,main='truth')
+fields::quilt.plot(Z,fieldEst,main='needlets zeroed out',zlim=c(0.93,0.99))
+fields::quilt.plot(Z,fieldEstNotSparse,main='Needlets not zeroed out',zlim=c(0.93,0.99))
+fields::quilt.plot(Z,y,main='truth',zlim=c(0.93,0.99))
+R.matlab::writeMat('swath_dhat_chat_tonga_j04.mat',dhat=dhat, chat=chat )

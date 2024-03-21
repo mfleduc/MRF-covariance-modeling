@@ -97,3 +97,8 @@ Needlet.CoeffEstimate <- function(lkinfo, y, PHI, tau){
   chat <- spam::backsolve.spam(Gchol,spam::forwardsolve.spam(Gchol, v, upper.tri=TRUE))
   return(chat)
 }
+
+
+
+
+
