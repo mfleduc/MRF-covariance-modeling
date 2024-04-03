@@ -53,3 +53,9 @@ rsconnect/
 
 #Specific files
 needletA_*.mat
+needletsgc*.mat
+*.png
+*.fig
+*.asv
+
+
