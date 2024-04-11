@@ -24,11 +24,13 @@ Needlet.Precision <- function(lkinfo){
   }
   return(list(Q=t(B)%*%B,B=B))
 }
-Needlet.LnLike <- function(y,PHI,lkinfo,tau,r.decay=TRUE,look=FALSE){
+Needlet.LnLike <- function(y,PHI,lkinfo,tau,r.decay=TRUE,look=FALSE,Q=NULL){
   #PHI is the matrix defining the needlet basis fns. Ideally sparse in some manner.
   #Define a cutoff radius? Unclear how to handle
   nSamples <- length(y)
-  Q <- Needlet.Precision(lkinfo)[[1]]
+  if(is.null(Q)){
+    Q <- Needlet.Precision(lkinfo)[[1]]
+  }
   if(is.na(lkinfo$lambda)){
     lambda <- 1
   }else{
@@ -46,7 +48,7 @@ Needlet.LnLike <- function(y,PHI,lkinfo,tau,r.decay=TRUE,look=FALSE){
   lnlike <- -1*(logdet + quadform)
   return(lnlike)
   }
-Needlet.FixedEffects<-function(lkinfo,y,Z,PHI,tau){
+Needlet.FixedEffects<-function(lkinfo,y,Z,PHI,tau,Q=NULL){
   #y: data
   #Z: Matrix of size (n datapoints x n predictors), with each column corresponding to a predictor and each row a lattice point
   #phi: Matrix of basis functions
@@ -57,7 +59,9 @@ Needlet.FixedEffects<-function(lkinfo,y,Z,PHI,tau){
     lambda <- lkinfo$lambda
   }
   #First: calculate M^_{-1}y
-  Q <- Needlet.Precision(lkinfo)[[1]]
+  if(is.null(Q)){
+    Q <- Needlet.Precision(lkinfo)[[1]]
+  }
   G = lambda*Q+1/tau^2*t(PHI)%*%PHI
   Gchol <-spam::chol.spam(G)
   Pty <- t(PHI)%*%y/tau^2
@@ -72,20 +76,24 @@ Needlet.FixedEffects<-function(lkinfo,y,Z,PHI,tau){
   dhat <- solve(ZTMiZ, ZTMiy)
   return(dhat)
 }
-Needlet.Simulate <-function(lkinfo){
+Needlet.Simulate <-function(lkinfo,Q=NULL){
   #Return the coefficients to save some small amount of trouble
   jmin = lkinfo$setupArgs$startingLevel-1;
   jmax = jmin+lkinfo$nlevel-1;
-  Q <- Needlet.Precision(lkinfo)[[1]]
+  if(is.null(Q)){
+    Q <- Needlet.Precision(lkinfo)[[1]]
+  }
   Qchol <- chol(Q)
   m <- 12*(4^((jmin):(jmax))) # total number of basis functions
   E <- matrix(rnorm(m), nrow = sum(m), ncol = 1) #Random, normally distributed coefficients
   A <- as.matrix(spam::backsolve(Qchol, E))
   return(A)
 }
-Needlet.CoeffEstimate <- function(lkinfo, y, PHI, tau){
+Needlet.CoeffEstimate <- function(lkinfo, y, PHI, tau,Q=NULL){
   #Following Nychka(2015) Section 3.1
-  Q <- Needlet.Precision(lkinfo)[[1]]
+  if(is.null(Q)){
+    Q <- Needlet.Precision(lkinfo)[[1]]
+  }
   if(is.na(lkinfo$lambda)){
     lambda <- 0.01
   }else{
